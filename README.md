@@ -11,9 +11,6 @@ AIBlogForge is a full-stack AI-powered blogging platform that allows users to wr
 - 🌓 Light and dark mode support
 - 🔒 User authentication and authorization
 
-## 🖼️ Logo
-
-![Logo](./public/logo.png)
 
 ## 🛠️ Tech Stack
 
