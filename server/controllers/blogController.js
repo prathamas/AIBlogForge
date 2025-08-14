@@ -3,7 +3,7 @@ import imagekit from '../configs/imageKit.js';
 import Blog from '../models/Blog.js';
 import Comment from "../models/Comment.js";
 import main from '../configs/gemini.js';
-
+import rateLimit from 'express-rate-limit';
 export const addBlog= async (req,res)=>{
     try{
         const{title,subtitle,description ,category ,isPublished}=JSON.parse(req.body.blog);
@@ -11,7 +11,7 @@ export const addBlog= async (req,res)=>{
 
         //Check if all fields are present 
         if(!title ||!description ||!category || !imageFile){
-            return res.json({sucess : false,message:"Missing required fields"})
+            return res.json({success : false,message:"Missing required fields"})
         }
 
         const fileBuffer=fs.readFileSync(imageFile.path)
@@ -57,7 +57,7 @@ export const getBlogById = async (req,res)=>{
         const {blogId}=req.params;
         const blog = await Blog.findById(blogId)
         if(!blog){
-            return res.json({sucess:false,message:"Blog not found"});
+            return res.json({success:false,message:"Blog not found"});
         }
         res.json({success:true,blog})
     } catch (error) {
@@ -111,13 +111,37 @@ export const getBlogComments = async (req,res)=>{
     }
 }
 
-
-export const generateContent = async (req, res)=>{
+const generateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  message: {
+    success: false,
+    message: "Too many requests, please wait a minute before trying again."
+  }
+});
+export const generateContent = [
+  generateLimiter, // Apply rate limiting middleware
+  async (req, res) => {
     try {
-        const {prompt} = req.body;
-        const content = await main(prompt +' Generate a blog content for this topic in simple text format')
-        res.json({success:true, content})
+      const { prompt } = req.body;
+
+      // Input validation
+      if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid prompt provided."
+        });
+      }
+
+      // Generate blog content
+      const content = await main(
+        `${prompt} - Generate a blog content for this topic in simple text format.`
+      );
+
+      res.json({ success: true, content });
     } catch (error) {
-        res.json({success:false, message:error.message})
+      console.error("Error generating content:", error);
+      res.status(500).json({ success: false, message: "Failed to generate content." });
     }
-}
+  }
+];

@@ -1,1 +1,7 @@
 node_modules
+# Ignore environment files
+server/.env
+client/.env
+
+# Ignore config files
+client/vite.config.js

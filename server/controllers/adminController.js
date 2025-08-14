@@ -1,19 +1,26 @@
 import jwt  from "jsonwebtoken"
 import Blog from "../models/Blog.js";
 import Comment from "../models/Comment.js";
+import { getAuth } from "@clerk/express";
+export const adminLogin = async (req, res) => {
+  try {
+    const { sessionId, userId } = getAuth(req);
 
-export const adminLogin = async (req,res)=>{
-    try {
-        const {email,password} = req.body;
-        if(email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD){
-            return res.json({sucess: false, message: "Invalid Credentials"})
-        }
-        const token =jwt.sign({email},process.env.JWT_SECRET)
-        res.json({success: true ,token})
-    }catch (error) {
-        res.json({success: false ,message: error.message})
+    if (!sessionId) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
     }
-}
+
+    // Optionally, check admin role from Clerk metadata
+    const isAdmin = req.auth.sessionClaims?.metadata?.role === "admin";
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    res.json({ success: true, message: "Welcome, Admin!" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const getAllBlogsAdmin = async(req,res)=>{
     try {

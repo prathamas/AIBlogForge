@@ -7,8 +7,12 @@ import Footer from '../components/Footer'
 import Loader from '../components/Loader'
 import { useAppContext } from '../context/AppContext'
 import toast from 'react-hot-toast'
-
+import { SignedIn, useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 const Blog = () => {
+    const { user, isSignedIn } = useUser();
+    const name = user?.fullName || user?.username || "Anonymous";
+    const navigate=useNavigate()
     const {id}=useParams()
 
     const {axios}=useAppContext()
@@ -16,9 +20,24 @@ const Blog = () => {
 
     const [data,setData]=useState(null)
     const [comments,setComments]=useState([])
-    const [name,setName]=useState('')
     const [content,setContent]=useState('')
 
+    const handleFocus = () => {
+    if (!isSignedIn) {
+      toast(
+        <div className="flex ">
+          <span className="px-1 py-1 text-sm text-center">Please sign in to comment.</span>
+           <a
+            href="/userlogin"
+            className="px-1 py-1 text-primary rounded-md text-sm text-center underline"
+            >
+            Sign In
+            </a>
+        </div>,
+        { duration: 5000 }
+      );
+    }
+  };
     const fetchBlodData=async()=>{
         try {
             const {data}=await axios.get(`/api/blog/${id}`)
@@ -45,7 +64,6 @@ const Blog = () => {
             const {data}=await axios.post('api/blog/add-comment',{blog: id,name,content});
             if(data.success){
                 toast.success(data.message)
-                setName('');
                 setContent('');
             }else{
                 toast.error(data.message);
@@ -93,11 +111,13 @@ const Blog = () => {
                 <div className='max-w-3xl mx-auto'>
                         <p className='font-semibold mb-4'>Add your comment</p>
                         <form onSubmit={addComment} className='flex flex-col items-start gap-4 max-w-lg'>
-                            <input onChange={(e)=> setName(e.target.value)} value={name} type="text" placeholder='Name' required className='w-full p-2 border border-gray-300 rounded outline-none'/>
+                            <input readOnly value={name} type="text" placeholder='Name' required className='w-full p-2 border border-gray-300 text-gray-400 rounded outline-none cursor-not-allowed'/>
 
-                            <textarea onChange={(e)=> setContent(e.target.value)} value={content}  placeholder='Comment' className='w-full p-2 border border-gray-300 rounded outline-none h-48'  required></textarea>
+                            <textarea readOnly={!isSignedIn} onFocus={handleFocus} onChange={(e)=> setContent(e.target.value)} value={content}  placeholder='Comment' className='w-full p-2 border border-gray-300 rounded  text-gray-400 outline-none h-48'  required></textarea>
 
-                            <button type='submit' className='bg-primary text-white rounded p-2 px-8 hover:scale-102 transition-all cursor-pointer'>Submit</button>
+                            <button  type='submit' className={`border bg-primary text-white p-2 w-full rounded hover:scale-102 transition-all cursor-pointer resize-none ${
+        !isSignedIn ? "bg-primary text-white rounded p-2 px-8 hover:scale-102 transition-all cursor-pointer" : ""
+      }`}>Submit</button>
                         </form>
                 </div>    
                 <div className='my-24 max-w-3xl mx-auto'>

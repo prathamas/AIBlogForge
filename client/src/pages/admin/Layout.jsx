@@ -4,14 +4,14 @@ import { assets } from '../../assets/assets'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../../components/admin/Sidebar'
 import { useAppContext } from '../../context/AppContext'
+import { useClerk } from "@clerk/clerk-react";
 const Layout = () => {
     const {axios,setToken,navigate}=useAppContext();
-    const logout=()=>{
-        localStorage.removeItem('token');
-        axios.defaults.headers.common['Authorization']=null;
-        setToken(null);
-        navigate('/');
-    }
+    const { signOut } = useClerk();
+
+    const handleLogout = async () => {
+      await signOut();
+    };
 
   return (
     <>
@@ -19,7 +19,7 @@ const Layout = () => {
         border-b border-gray-200'>
             <img src={logo} alt="" className='w-32 sm:w-40 cursor-pointer'
              onClick={()=> navigate('/')}/>
-             <button onClick={logout} className='text-sm px-8 py-2 bg-primary text-white rounded-full cursor-pointer'>Logout</button>
+             <button onClick={handleLogout} className='text-sm px-8 py-2 bg-primary text-white rounded-full cursor-pointer'>Logout</button>
         </div>
         <div className='flex h-[calc(100vh-70px)]'>
             <Sidebar/>

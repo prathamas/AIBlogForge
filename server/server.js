@@ -4,13 +4,16 @@ import cors from 'cors'
 import connectDB from './configs/db.js';
 import adminRouter from './routes/adminRoutes.js';
 import blogRouter from './routes/blogRoutes.js';
-
+import { clerkMiddleware } from '@clerk/express';
+import dotenv from 'dotenv';
+dotenv.config();
 const app = express();
 
 await connectDB()
 // middlewares
-app.use(cors())
-app.use(express.json())
+app.use(clerkMiddleware());
+app.use(cors());
+app.use(express.json());
 
 // Routes
 app.get('/',(req,res)=>{

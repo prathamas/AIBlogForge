@@ -2,16 +2,25 @@ import React from 'react'
 import { assets } from '../../assets/assets';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
-
+import { useAuth } from '@clerk/clerk-react';
 const CommentTableItem = ({comment ,fetchComments}) => {
     const {axios}=useAppContext();
-
+    const { getToken } = useAuth();
     const{ blog, createdAt, _id}=comment;
     const BlogDate=new Date(createdAt);
 
     const approveComment= async()=>{
         try {
-            const{data}=await axios.post('/api/admin/approve-comment',{id:_id})
+            const token = await getToken(); // Clerk JWT
+            const { data } = await axios.post(
+            '/api/admin/approve-comment',
+            { id: _id },
+            {
+                headers: {
+                Authorization: `Bearer ${token}`
+                }
+            }
+            );
             if(data.success){
                 toast.success(data.message)
                 fetchComments()
@@ -28,8 +37,12 @@ const CommentTableItem = ({comment ,fetchComments}) => {
         try {
             const confirm=window.confirm("Are you sure you want to delte this comment?")
             if(!confirm)return;
-
-            const{data}=await axios.post('/api/admin/delete-comment',{id:_id})
+            const token = await getToken();
+            const{data}=await axios.post('/api/admin/delete-comment',{id:_id},{
+                headers: {
+                Authorization: `Bearer ${token}`
+                }
+            });
             if(data.success){
                 toast.success(data.message)
                 fetchComments()

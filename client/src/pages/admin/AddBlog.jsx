@@ -4,9 +4,10 @@ import Quill from 'quill';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
 import {parse} from 'marked';
-
+import { useAuth } from '@clerk/clerk-react';
 const AddBlog = () => {
     const {axios}=useAppContext()
+    const { getToken } = useAuth(); // import useAuth from @clerk/clerk-react
     const [isAdding,setIsAdding]=useState(false)
     const [loading,setLoading]=useState(false)
     const editorRef =useRef(null)
@@ -37,39 +38,50 @@ const AddBlog = () => {
         }
     }
 
-    const onSubmitHandler=async(e)=>{
-        try {
-            e.preventDefault();
-            setIsAdding(true)
+    
 
-            const blog={
-                title,subTitle,
-                description:quillRef.current.root.innerHTML,
-                category,isPublished
-            }
-            const formData = new FormData();
-            formData.append('blog',JSON.stringify(blog))
-            formData.append('image',image)
-            const {data}=await axios.post("/api/blog/add",formData)
+const onSubmitHandler = async (e) => {
+  try {
+    e.preventDefault();
+    setIsAdding(true);
 
-            if(data.success){
-                toast.success(data.message)
-                setImage(false)
-                setTitle('')
-                setSubTitle('')
-                quillRef.current.root.innerHTML=''
-                setCategory('Startup')
-            }else{
-                toast.error(data.message)
-            }
-        } catch (error) {
-            toast.error(error.message)
-        }
-        finally{
-            setIsAdding(false);
-        }
+    const token = await getToken(); // Clerk JWT
 
+    const blog = {
+      title,
+      subTitle,
+      description: quillRef.current.root.innerHTML,
+      category,
+      isPublished,
+    };
+
+    const formData = new FormData();
+    formData.append('blog', JSON.stringify(blog));
+    formData.append('image', image);
+
+    const { data } = await axios.post('/api/blog/add', formData, {
+      headers: {
+        Authorization: `Bearer ${token}`, // send JWT here
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (data.success) {
+      toast.success(data.message);
+      setImage(false);
+      setTitle('');
+      setSubTitle('');
+      quillRef.current.root.innerHTML = '';
+      setCategory('Startup');
+    } else {
+      toast.error(data.message);
     }
+  } catch (error) {
+    toast.error(error.response?.data?.message || error.message);
+  } finally {
+    setIsAdding(false);
+  }
+};
 
     useEffect(()=>{
         if(!quillRef.current && editorRef.current){

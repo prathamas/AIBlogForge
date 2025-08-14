@@ -3,27 +3,33 @@ import { blog_data } from '../../assets/assets';
 import BlogTableItem from '../../components/admin/BlogTableItem';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
-
+import { useAuth } from "@clerk/clerk-react";
 const ListBlog = () => {
 
-  const [blogs,setBlogs]=useState([]);
-  const{axios}=useAppContext();
+  const [blogs, setBlogs] = useState([]);
+  const { axios } = useAppContext();
+  const { getToken } = useAuth();
 
-  const fetchBlogs=async ()=>{
+  const fetchBlogs = async () => {
     try {
-      const {data} = await axios.get('/api/admin/blogs')
-      if(data.success){
-        setBlogs(data.blogs)
-      }else{
-        toast.error(data.message)
+      const token = await getToken(); // Clerk JWT
+      const { data } = await axios.get('/api/admin/blogs', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data.success) {
+        setBlogs(data.blogs);
+      } else {
+        toast.error(data.message);
       }
     } catch (error) {
-        toast.error(error.message)
+      toast.error(error.response?.data?.message || error.message);
     }
-  }
-  useEffect(()=>{
-    fetchBlogs()
-  },[])
+  };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
   return (
     <div className='flex-1 pt-5 px-5 sm:pt-12 bg-blue-50/50'>
         <h1 >All blogs</h1>
